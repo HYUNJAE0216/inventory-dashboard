@@ -9,13 +9,9 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  if (request.nextUrl.pathname.startsWith("/api")) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  }
-
-  return NextResponse.redirect(new URL("/login", request.url));
+  return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 }
 
 export const config = {
-  matcher: ["/((?!login|api/auth|_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/api/((?!auth).*)"],
 };

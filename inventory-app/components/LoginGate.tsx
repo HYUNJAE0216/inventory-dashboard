@@ -1,10 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import type { FormEvent } from "react";
 
-export default function LoginPage() {
-  const router = useRouter();
+interface Props {
+  onSuccess: () => void;
+}
+
+export default function LoginGate({ onSuccess }: Props) {
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
   const [lockedUntil, setLockedUntil] = useState(0);
@@ -25,7 +28,7 @@ export default function LoginPage() {
   const remainingMs = Math.max(0, lockedUntil - now);
   const isLocked = remainingMs > 0;
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (isLocked || submitting || !pin) return;
     setSubmitting(true);
@@ -38,8 +41,7 @@ export default function LoginPage() {
       });
       const data = await res.json();
       if (res.ok && data.ok) {
-        router.push("/");
-        router.refresh();
+        onSuccess();
         return;
       }
       if (data.lockedMs > 0) {

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { MouseEvent } from "react";
+import LoginGate from "@/components/LoginGate";
 import MonthSelector from "@/components/MonthSelector";
 import KpiCards from "@/components/KpiCards";
 import CategoryBarChart from "@/components/CategoryBarChart";
@@ -13,6 +14,7 @@ import { categoryTotals, categoryDeviations } from "@/lib/aggregate";
 import type { AccuracyPoint, ItemRow, MonthOption } from "@/lib/types";
 
 export default function Page() {
+  const [authenticated, setAuthenticated] = useState(false);
   const [months, setMonths] = useState<MonthOption[]>([]);
   const [selectedMonth, setSelectedMonth] = useState<string>("");
   const [trend, setTrend] = useState<{ target: number; data: AccuracyPoint[] }>({ target: 90, data: [] });
@@ -21,6 +23,7 @@ export default function Page() {
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
 
   useEffect(() => {
+    if (!authenticated) return;
     Promise.all([
       fetch("/api/months").then((r) => r.json()) as Promise<MonthOption[]>,
       fetch("/api/accuracy-trend").then((r) => r.json()) as Promise<{ target: number; data: AccuracyPoint[] }>,
@@ -30,17 +33,17 @@ export default function Page() {
       const latest = monthsRes[monthsRes.length - 1];
       if (latest) setSelectedMonth(latest.month);
     });
-  }, []);
+  }, [authenticated]);
 
   useEffect(() => {
-    if (!selectedMonth) return;
+    if (!authenticated || !selectedMonth) return;
     fetch(`/api/inventory?month=${selectedMonth}`)
       .then((r) => r.json())
       .then((res: { hasDetail: boolean; items: ItemRow[] }) => {
         setHasDetail(res.hasDetail);
         setItems(res.items);
       });
-  }, [selectedMonth]);
+  }, [authenticated, selectedMonth]);
 
   const catTotals = useMemo(() => categoryTotals(items), [items]);
   const catDeviations = useMemo(() => categoryDeviations(items), [items]);
@@ -50,6 +53,10 @@ export default function Page() {
   }
   function handleLeave() {
     setTooltip(null);
+  }
+
+  if (!authenticated) {
+    return <LoginGate onSuccess={() => setAuthenticated(true)} />;
   }
 
   return (
